@@ -14,8 +14,24 @@ local _IsSpellInRange = IsSpellInRange
 local _UnitInRange = UnitInRange
 
 -- AddOn Hook
+local _GridFrame
+local _GridUnitInRange
 local _LibIsSpellInRange
 local _VUHDO_isInRange
+
+-- Grid
+local function GridUnitInRealmRange(unit)
+    local playerRealm = UnitDebuff("player", SPIRIT_REALM)
+    local unitRealm = UnitDebuff(unit, SPIRIT_REALM)
+
+    -- If the realms aren't equal then the range is always false
+    if UnitIsPlayer(unit) or playerRealm ~= unitRealm then
+        return false
+    else
+        -- Otherwise, just return a regular range check
+        return _GridUnitInRange(unit)
+    end
+end
 
 -- Replace IsSpellInRange(index, "bookType", "unit")
 local function IsSpellInRealmRange(index, bookType, unit)
@@ -81,6 +97,12 @@ function mod:ReplaceGlobals()
         VUHDO_isInRange = VUHDO_isInRealmRange
     end
 
+    if Grid then
+        _GridFrame = Grid:GetModule("GridFrame")
+        _GridUnitInRange = _GridFrame.UnitInRange
+        _GridFrame.UnitInRange = GridUnitInRealmRange
+    end
+
     -- Blizzard Raid Frames
     UnitInRange = UnitInRealmRange
 
@@ -96,6 +118,10 @@ function mod:RestoreGlobals()
 
     if VUHDO_isInRange then
         VUHDO_isInRange = _VUHDO_isInRange
+    end
+
+    if Grid then
+        _GridFrame.UnitInRange = _GridUnitInRange
     end
     
     UnitInRange = _UnitInRange
@@ -186,11 +212,11 @@ frame:RegisterEvent("ENCOUNTER_START")
 frame:RegisterEvent("ENCOUNTER_END")
 
 local function Enable()
-	ReplaceGlobals()
+	mod:ReplaceGlobals()
 end
 
 local function Disable()
-    RestoreGlobals()
+    mod:RestoreGlobals()
 end
 
 frame:SetScript("OnEvent", function(_, event, encounterID)

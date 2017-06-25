@@ -1,6 +1,6 @@
 ## Interface: 70200
 ## Author: InKahootz
-## Version: 0.3
+## Version: 0.4
 ## Title: Desolate Host Frame Fix
 ## Notes: Adjusts frame alpha if you are in a separate realm
 
