@@ -5,20 +5,25 @@ _G[addonName] = mod
 
 local SPIRIT_REALM = GetSpellInfo(235621)
 
+local UnitDebuff, UnitIsPlayer = UnitDebuff, UnitIsPlayer
+
 --
 -- Blizzard Hook
 --
-local _LibIsSpellInRange
 local _IsSpellInRange = IsSpellInRange
 local _UnitInRange = UnitInRange
 
+-- AddOn Hook
+local _LibIsSpellInRange
+local _VUHDO_isInRange
+
 -- Replace IsSpellInRange(index, "bookType", "unit")
-local function IsSpellInRealm(index, bookType, unit)
+local function IsSpellInRealmRange(index, bookType, unit)
     local playerRealm = UnitDebuff("player", SPIRIT_REALM)
     local unitRealm = UnitDebuff(bookType or "", SPIRIT_REALM) or UnitDebuff(unit, SPIRIT_REALM)
 
     -- If the realms aren't equal then the range is always false
-    if playerRealm ~= unitRealm then
+    if UnitIsPlayer(unit) or playerRealm ~= unitRealm then
         return false
     else
         -- Otherwise, just return a regular range check
@@ -27,12 +32,12 @@ local function IsSpellInRealm(index, bookType, unit)
 end
 
 -- Replace SpellRange-1.0 IsSpellInRange. Little hacky but it works.
-local function LibIsSpellInRealm(spellInput, unit)
+local function LibIsSpellInRealmRange(spellInput, unit)
     local playerRealm = UnitDebuff("player", SPIRIT_REALM)
     local unitRealm = UnitDebuff(bookType or "", SPIRIT_REALM) or UnitDebuff(unit, SPIRIT_REALM)
 
     -- If the realms aren't equal then the range is always false
-    if playerRealm ~= unitRealm then
+    if UnitIsPlayer(unit) and playerRealm ~= unitRealm then
         return false
     else
         -- Otherwise, just return a regular range check
@@ -41,12 +46,12 @@ local function LibIsSpellInRealm(spellInput, unit)
 end
 
 -- Replace UnitInRange(unit)
-local function UnitInRealm(unit)
+local function UnitInRealmRange(unit)
     local playerRealm = UnitDebuff("player", SPIRIT_REALM)
     local unitRealm = UnitDebuff(unit, SPIRIT_REALM)
 
     -- If the realms aren't equal then the range is always false
-    if playerRealm ~= unitRealm then
+    if UnitIsPlayer(unit) and playerRealm ~= unitRealm then
         -- Undocumented 2nd return. Always true from what I can tell.
         return false, true
     else
@@ -55,26 +60,42 @@ local function UnitInRealm(unit)
     end
 end
 
-local detectedLibSR = false
+-- VUHDO override just to use our custom global functions
+local function VUHDO_isInRealmRange(unit)
+    if UnitIsPlayer(unit) then
+        return UnitInRealmRange(unit)
+    else
+        return _VUHDO_isInRange
+    end
+end
+
 function mod:ReplaceGlobals()
     -- ElvUI
     if LibStub and LibStub.libs["SpellRange-1.0"] then
         _LibIsSpellInRange = LibStub.libs["SpellRange-1.0"].IsSpellInRange
-        LibStub.libs["SpellRange-1.0"].IsSpellInRange = LibIsSpellInRealm
-        detectedLibSR = true
+        LibStub.libs["SpellRange-1.0"].IsSpellInRange = LibIsSpellInRealmRange
+    end
+
+    -- Vuhdo
+    if VUHDO_isInRange then
+        VUHDO_isInRange = VUHDO_isInRealmRange
     end
 
     -- Blizzard Raid Frames
-    UnitInRange = UnitInRealm
+    UnitInRange = UnitInRealmRange
 
     -- Any globals that use it
-	IsSpellInRange = IsSpellInRealm
+	IsSpellInRange = IsSpellInRealmRange
 end
 
 function mod:RestoreGlobals()
 
-    if detectedLibSR then
+    if LibStub and LibStub.libs["SpellRange-1.0"] then
         LibStub.libs["SpellRange-1.0"].IsSpellInRange = _LibIsSpellInRange
+    end
+
+    if VUHDO_isInRange then
+        VUHDO_isInRange = _VUHDO_isInRange
     end
     
     UnitInRange = _UnitInRange
@@ -98,7 +119,7 @@ local function IsSpellInRenew(index, bookType, unit)
 end
 
 -- Replace SpellRange-1.0 IsSpellInRange. Little hacky but it works.
-local function LibIsSpellInRealm(spellInput, unit)
+local function LibIsSpellInRenew(spellInput, unit)
     local playerRealm = UnitBuff("player", "Renew")
     local unitRealm = UnitBuff(bookType or "", "Renew")
 
@@ -130,7 +151,7 @@ local function ReplaceTest()
     -- ElvUI
     if LibStub and LibStub.libs["SpellRange-1.0"] then
         _LibIsSpellInRange = LibStub.libs["SpellRange-1.0"].IsSpellInRange
-        LibStub.libs["SpellRange-1.0"].IsSpellInRange = LibIsSpellInRealm
+        LibStub.libs["SpellRange-1.0"].IsSpellInRange = LibIsSpellInRealmRange
     end
 
     -- Blizzard Raid Frames
