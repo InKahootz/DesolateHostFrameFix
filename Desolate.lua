@@ -223,7 +223,7 @@ frame:SetScript("OnEvent", function(_, event, encounterID)
     -- The Desolate Host Start
 	if event == "ENCOUNTER_START" and encounterID == 2054 then
 		Enable()
-	elseif event == "ENCOUNTER_END" then
+	elseif event == "ENCOUNTER_END" and encounterID == 2054 then
 		Disable()
     end
 end)
