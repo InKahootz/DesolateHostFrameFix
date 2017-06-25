@@ -19,7 +19,7 @@ local function IsSpellInRealm(index, bookType, unit)
 
     -- If the realms aren't equal then the range is always false
     if playerRealm ~= unitRealm then
-        return false, true
+        return false
     else
         -- Otherwise, just return a regular range check
         return _IsSpellInRange(index, bookType, unit)
@@ -55,10 +55,14 @@ local function UnitInRealm(unit)
     end
 end
 
+local detectedLibSR = false
 function mod:ReplaceGlobals()
     -- ElvUI
-    _LibIsSpellInRange = LibStub.libs["SpellRange-1.0"].IsSpellInRange
-    LibStub.libs["SpellRange-1.0"].IsSpellInRange = LibIsSpellInRealm
+    if LibStub and LibStub.libs["SpellRange-1.0"] then
+        _LibIsSpellInRange = LibStub.libs["SpellRange-1.0"].IsSpellInRange
+        LibStub.libs["SpellRange-1.0"].IsSpellInRange = LibIsSpellInRealm
+        detectedLibSR = true
+    end
 
     -- Blizzard Raid Frames
     UnitInRange = UnitInRealm
@@ -68,7 +72,11 @@ function mod:ReplaceGlobals()
 end
 
 function mod:RestoreGlobals()
-    LibStub.libs["SpellRange-1.0"].IsSpellInRange = _LibIsSpellInRange
+
+    if detectedLibSR then
+        LibStub.libs["SpellRange-1.0"].IsSpellInRange = _LibIsSpellInRange
+    end
+    
     UnitInRange = _UnitInRange
 	IsSpellInRange = _IsSpellInRange
 end
@@ -120,8 +128,10 @@ end
 
 local function ReplaceTest()
     -- ElvUI
-    _LibIsSpellInRange = LibStub.libs["SpellRange-1.0"].IsSpellInRange
-    LibStub.libs["SpellRange-1.0"].IsSpellInRange = LibIsSpellInRealm
+    if LibStub and LibStub.libs["SpellRange-1.0"] then
+        _LibIsSpellInRange = LibStub.libs["SpellRange-1.0"].IsSpellInRange
+        LibStub.libs["SpellRange-1.0"].IsSpellInRange = LibIsSpellInRealm
+    end
 
     -- Blizzard Raid Frames
     UnitInRange = UnitInRenew
@@ -131,7 +141,10 @@ local function ReplaceTest()
 end
 
 local function RestoreTest()
-    LibStub.libs["SpellRange-1.0"].IsSpellInRange = _LibIsSpellInRange
+    if LibStub and LibStub.libs["SpellRange-1.0"] then
+        LibStub.libs["SpellRange-1.0"].IsSpellInRange = _LibIsSpellInRange
+    end
+
     UnitInRange = _UnitInRange
 	IsSpellInRange = _IsSpellInRange
 end
@@ -150,7 +163,6 @@ local frame = CreateFrame("Frame")
 
 frame:RegisterEvent("ENCOUNTER_START")
 frame:RegisterEvent("ENCOUNTER_END")
-frame:RegisterEvent("ADDON_LOADED")
 
 local function Enable()
 	ReplaceGlobals()
@@ -160,18 +172,11 @@ local function Disable()
     RestoreGlobals()
 end
 
-local i = 1;
-mod.addons = {}
 frame:SetScript("OnEvent", function(_, event, encounterID)
     -- The Desolate Host Start
 	if event == "ENCOUNTER_START" and encounterID == 2054 then
 		Enable()
 	elseif event == "ENCOUNTER_END" then
 		Disable()
-	elseif event == "ADDON_LOADED" then
-        i = i + 1
-        if encounterID == "DesolateFrameFix" or encounterID == "ElvUI" then
-            mod.addons[encounterID] = i
-        end
     end
 end)
