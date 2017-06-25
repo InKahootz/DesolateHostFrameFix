@@ -1,0 +1,7 @@
+## Interface: 70200
+## Author: InKahootz
+## Version: 0.1
+## Title: Desolate Host Frame Fix
+## Notes: Adjusts frame alpha if you are in a separate realm
+
+Desolate.lua
