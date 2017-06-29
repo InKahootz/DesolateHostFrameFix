@@ -1,8 +1,9 @@
 local addonName, mod = ...
 _G[addonName] = mod
 
--- GLOBALS: GetSpellInfo, IsSpellInRange, UnitInRange
+-- GLOBALS: GetSpellInfo, IsSpellInRange, UnitInRange, SLASH_DesolateHostFrameFix1
 
+local DESOLATE_HOST_ENCOUNTER_ID = 2054
 local SPIRIT_REALM = GetSpellInfo(235621)
 
 local UnitDebuff, UnitIsPlayer = UnitDebuff, UnitIsPlayer
@@ -21,67 +22,54 @@ local _VUHDO_isInRange
 
 -- Grid
 local function GridUnitInRealmRange(unit)
-    local playerRealm = UnitDebuff("player", SPIRIT_REALM)
-    local unitRealm = UnitDebuff(unit, SPIRIT_REALM)
-
-    -- If the realms aren't equal then the range is always false
-    if UnitIsPlayer(unit) or playerRealm ~= unitRealm then
-        return false
-    else
-        -- Otherwise, just return a regular range check
-        return _GridUnitInRange(unit)
-    end
+    DelegateRangeCheck(_GridUnitInRange, unit)
 end
 
 -- Replace IsSpellInRange(index, "bookType", "unit")
 local function IsSpellInRealmRange(index, bookType, unit)
-    local playerRealm = UnitDebuff("player", SPIRIT_REALM)
-    local unitRealm = UnitDebuff(bookType or "", SPIRIT_REALM) or UnitDebuff(unit, SPIRIT_REALM)
-
-    -- If the realms aren't equal then the range is always false
-    if UnitIsPlayer(unit) or playerRealm ~= unitRealm then
-        return false
-    else
-        -- Otherwise, just return a regular range check
-        return _IsSpellInRange(index, bookType, unit)
-    end
+    DelegateRangeCheck(_IsSpellInRange, index, bookType, unit)
 end
 
 -- Replace SpellRange-1.0 IsSpellInRange. Little hacky but it works.
 local function LibIsSpellInRealmRange(spellInput, unit)
-    local playerRealm = UnitDebuff("player", SPIRIT_REALM)
-    local unitRealm = UnitDebuff(bookType or "", SPIRIT_REALM) or UnitDebuff(unit, SPIRIT_REALM)
-
-    -- If the realms aren't equal then the range is always false
-    if UnitIsPlayer(unit) and playerRealm ~= unitRealm then
-        return false
-    else
-        -- Otherwise, just return a regular range check
-        return _LibIsSpellInRange(spellInput, unit)
-    end
+    DelegateRangeCheck(_LibIsSpellInRange, spellInput, unit)
 end
 
 -- Replace UnitInRange(unit)
 local function UnitInRealmRange(unit)
-    local playerRealm = UnitDebuff("player", SPIRIT_REALM)
-    local unitRealm = UnitDebuff(unit, SPIRIT_REALM)
-
-    -- If the realms aren't equal then the range is always false
-    if UnitIsPlayer(unit) and playerRealm ~= unitRealm then
-        -- Undocumented 2nd return. Always true from what I can tell.
-        return false, true
-    else
-        -- Otherwise, just return a regular range check
-        return _UnitInRange(unit)
-    end
+    DelegateRangeCheck(_UnitInRange, unit)
 end
 
 -- VUHDO override just to use our custom global functions
 local function VUHDO_isInRealmRange(unit)
-    if UnitIsPlayer(unit) then
-        return UnitInRealmRange(unit)
+    DelegateRangeCheck(_VUHDO_isInRange, unit)
+end
+
+local function DelegateRangeCheck(originalFunc, ...)
+    -- Make sure we are actually getting a unit to check against
+    local unit
+    local n = select('#', ...)
+    for i = 1,n do
+        local arg = select(i, ...)
+        if UnitIsPlayer(arg) then
+            unit = arg
+            break;
+        end
+    end
+    if not unit then
+        -- Not our problem
+        return originalFunc(...)
+    end
+
+    local playerRealm = UnitDebuff("player", SPIRIT_REALM)
+    local unitRealm = UnitDebuff(unit, SPIRIT_REALM)
+
+    -- If the realms aren't equal then the range is always false
+    if playerRealm ~= unitRealm then
+        -- Returning extra for UnitInRange, could be breaking but it doesn't interfere with any of the supported addons
+        return false, true
     else
-        return _VUHDO_isInRange
+        return originalFunc(...)
     end
 end
 
@@ -221,9 +209,9 @@ end
 
 frame:SetScript("OnEvent", function(_, event, encounterID)
     -- The Desolate Host Start
-	if event == "ENCOUNTER_START" and encounterID == 2054 then
+	if event == "ENCOUNTER_START" and encounterID == DESOLATE_HOST_ENCOUNTER_ID then
 		Enable()
-	elseif event == "ENCOUNTER_END" and encounterID == 2054 then
+	elseif event == "ENCOUNTER_END" and encounterID == DESOLATE_HOST_ENCOUNTER_ID then
 		Disable()
     end
 end)

@@ -1,7 +1,7 @@
 ## Interface: 70200
 ## Author: InKahootz
-## Version: 0.4
+## Version: 0.5
 ## Title: Desolate Host Frame Fix
-## Notes: Adjusts frame alpha if you are in a separate realm
+## Notes: Adds extra checks to unit range functions during The Desolate Host raid enounter
 
 Desolate.lua
