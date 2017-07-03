@@ -20,31 +20,6 @@ local _GridUnitInRange
 local _LibIsSpellInRange
 local _VUHDO_isInRange
 
--- Grid
-local function GridUnitInRealmRange(unit)
-    DelegateRangeCheck(_GridUnitInRange, unit)
-end
-
--- Replace IsSpellInRange(index, "bookType", "unit")
-local function IsSpellInRealmRange(index, bookType, unit)
-    DelegateRangeCheck(_IsSpellInRange, index, bookType, unit)
-end
-
--- Replace SpellRange-1.0 IsSpellInRange. Little hacky but it works.
-local function LibIsSpellInRealmRange(spellInput, unit)
-    DelegateRangeCheck(_LibIsSpellInRange, spellInput, unit)
-end
-
--- Replace UnitInRange(unit)
-local function UnitInRealmRange(unit)
-    DelegateRangeCheck(_UnitInRange, unit)
-end
-
--- VUHDO override just to use our custom global functions
-local function VUHDO_isInRealmRange(unit)
-    DelegateRangeCheck(_VUHDO_isInRange, unit)
-end
-
 local function DelegateRangeCheck(originalFunc, ...)
     -- Make sure we are actually getting a unit to check against
     local unit
@@ -71,6 +46,31 @@ local function DelegateRangeCheck(originalFunc, ...)
     else
         return originalFunc(...)
     end
+end
+
+-- Grid
+local function GridUnitInRealmRange(unit)
+    DelegateRangeCheck(_GridUnitInRange, unit)
+end
+
+-- Replace IsSpellInRange(index, "bookType", "unit")
+local function IsSpellInRealmRange(index, bookType, unit)
+    DelegateRangeCheck(_IsSpellInRange, index, bookType, unit)
+end
+
+-- Replace SpellRange-1.0 IsSpellInRange. Little hacky but it works.
+local function LibIsSpellInRealmRange(spellInput, unit)
+    DelegateRangeCheck(_LibIsSpellInRange, spellInput, unit)
+end
+
+-- Replace UnitInRange(unit)
+local function UnitInRealmRange(unit)
+    DelegateRangeCheck(_UnitInRange, unit)
+end
+
+-- VUHDO override just to use our custom global functions
+local function VUHDO_isInRealmRange(unit)
+    DelegateRangeCheck(_VUHDO_isInRange, unit)
 end
 
 function mod:ReplaceGlobals()
