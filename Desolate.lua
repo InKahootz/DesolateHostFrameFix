@@ -289,12 +289,15 @@ local function Enable()
 	if not enabled then 
         mod:ReplaceGlobals()
         enabled = true
+        print('Desolate Host Frame Fix: |cFF00FF00Enabled|r')
     end
 end
 
 local function Disable()
     if enabled then
         mod:RestoreGlobals()
+        enabled = false             
+        print('Desolate Host Frame Fix: |cFFFF0000Disabled|r')   
     end
 end
 
@@ -311,9 +314,7 @@ SLASH_DesolateHostFrameFix1 = "/dhff"
 SlashCmdList["DesolateHostFrameFix"] = function(txt)
     if txt == "on" or txt == "enable" then
         Enable()
-        print('Desolate Host Frame Fix: |cFF00FF00Enabled|r')
     elseif txt == "off" or txt == "disable" then
         Disable()
-        print('Desolate Host Frame Fix: |cFFFF0000Disabled|r')        
     end
 end
