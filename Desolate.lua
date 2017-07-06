@@ -76,19 +76,19 @@ local function IsSpellInRealmRange(index, bookType, unit)
     --DelegateRangeCheck(_IsSpellInRange, index, bookType, unit)
         -- Make sure we are actually getting a unit to check against
 
-    if not UnitIsPlayer(unit) then
+    if not (UnitIsPlayer(bookType) or UnitIsPlayer(unit)) then
         -- Not our problem
-        return _LibIsSpellInRange(spellInput, unit)
+        return _IsSpellInRange(index, bookType, unit)
     end
 
     local playerRealm = UnitDebuff("player", SPIRIT_REALM)
-    local unitRealm = UnitDebuff(unit, SPIRIT_REALM)
+    local unitRealm = UnitDebuff(bookType, SPIRIT_REALM) or UnitDebuff(unit, SPIRIT_REALM)
 
     -- If the realms aren't equal then the range is always false
     if playerRealm ~= unitRealm then
         return 0
     else
-        return _LibIsSpellInRange(spellInput, unit)
+        return _IsSpellInRange(index, bookType, unit)
     end
 end
 
@@ -120,7 +120,7 @@ local function UnitInRealmRange(unit)
 
     if not UnitIsPlayer(unit) then
         -- Not our problem
-        return UnitInRange(unit)
+        return _UnitInRange(unit)
     end
 
     local playerRealm = UnitDebuff("player", SPIRIT_REALM)
@@ -131,7 +131,7 @@ local function UnitInRealmRange(unit)
         -- Returning extra for UnitInRange, could be breaking but it doesn't interfere with any of the supported addons
         return false, true
     else
-        return UnitInRange(unit)
+        return _UnitInRange(unit)
     end
 end
 
