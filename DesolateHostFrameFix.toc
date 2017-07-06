@@ -1,6 +1,6 @@
 ## Interface: 70200
 ## Author: InKahootz
-## Version: 0.5
+## Version: 0.6
 ## Title: Desolate Host Frame Fix
 ## Notes: Adds extra checks to unit range functions during The Desolate Host raid enounter
 

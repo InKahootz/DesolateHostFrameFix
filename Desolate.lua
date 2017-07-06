@@ -20,6 +20,7 @@ local _GridUnitInRange
 local _LibIsSpellInRange
 local _VUHDO_isInRange
 
+--[[
 local function DelegateRangeCheck(originalFunc, ...)
     -- Make sure we are actually getting a unit to check against
     local unit
@@ -47,41 +48,125 @@ local function DelegateRangeCheck(originalFunc, ...)
         return originalFunc(...)
     end
 end
+]]
 
 -- Grid
 local function GridUnitInRealmRange(unit)
-    DelegateRangeCheck(_GridUnitInRange, unit)
+    --DelegateRangeCheck(_GridUnitInRange, unit)
+        -- Make sure we are actually getting a unit to check against
+
+    if not UnitIsPlayer(unit) then
+        -- Not our problem
+        return _GridUnitInRange(unit)
+    end
+
+    local playerRealm = UnitDebuff("player", SPIRIT_REALM)
+    local unitRealm = UnitDebuff(unit, SPIRIT_REALM)
+
+    -- If the realms aren't equal then the range is always false
+    if playerRealm ~= unitRealm then
+        return false
+    else
+        return _GridUnitInRange(spellInput, unit)
+    end
 end
 
 -- Replace IsSpellInRange(index, "bookType", "unit")
 local function IsSpellInRealmRange(index, bookType, unit)
-    DelegateRangeCheck(_IsSpellInRange, index, bookType, unit)
+    --DelegateRangeCheck(_IsSpellInRange, index, bookType, unit)
+        -- Make sure we are actually getting a unit to check against
+
+    if not UnitIsPlayer(unit) then
+        -- Not our problem
+        return _LibIsSpellInRange(spellInput, unit)
+    end
+
+    local playerRealm = UnitDebuff("player", SPIRIT_REALM)
+    local unitRealm = UnitDebuff(unit, SPIRIT_REALM)
+
+    -- If the realms aren't equal then the range is always false
+    if playerRealm ~= unitRealm then
+        return 0
+    else
+        return _LibIsSpellInRange(spellInput, unit)
+    end
 end
 
 -- Replace SpellRange-1.0 IsSpellInRange. Little hacky but it works.
 local function LibIsSpellInRealmRange(spellInput, unit)
-    DelegateRangeCheck(_LibIsSpellInRange, spellInput, unit)
+    --DelegateRangeCheck(_LibIsSpellInRange, spellInput, unit)
+        -- Make sure we are actually getting a unit to check against
+
+    if not UnitIsPlayer(unit) then
+        -- Not our problem
+        return _LibIsSpellInRange(spellInput, unit)
+    end
+
+    local playerRealm = UnitDebuff("player", SPIRIT_REALM)
+    local unitRealm = UnitDebuff(unit, SPIRIT_REALM)
+
+    -- If the realms aren't equal then the range is always false
+    if playerRealm ~= unitRealm then
+        return 0
+    else
+        return _LibIsSpellInRange(spellInput, unit)
+    end
 end
 
 -- Replace UnitInRange(unit)
 local function UnitInRealmRange(unit)
-    DelegateRangeCheck(_UnitInRange, unit)
+    --DelegateRangeCheck(_UnitInRange, unit)
+            -- Make sure we are actually getting a unit to check against
+
+    if not UnitIsPlayer(unit) then
+        -- Not our problem
+        return UnitInRange(unit)
+    end
+
+    local playerRealm = UnitDebuff("player", SPIRIT_REALM)
+    local unitRealm = UnitDebuff(unit, SPIRIT_REALM)
+
+    -- If the realms aren't equal then the range is always false
+    if playerRealm ~= unitRealm then
+        -- Returning extra for UnitInRange, could be breaking but it doesn't interfere with any of the supported addons
+        return false, true
+    else
+        return UnitInRange(unit)
+    end
 end
 
 -- VUHDO override just to use our custom global functions
 local function VUHDO_isInRealmRange(unit)
-    DelegateRangeCheck(_VUHDO_isInRange, unit)
+    --DelegateRangeCheck(_VUHDO_isInRange, unit)
+    -- Make sure we are actually getting a unit to check against
+
+    if not UnitIsPlayer(unit) then
+        -- Not our problem
+        return _VUHDO_isInRange(unit)
+    end
+
+    local playerRealm = UnitDebuff("player", SPIRIT_REALM)
+    local unitRealm = UnitDebuff(unit, SPIRIT_REALM)
+
+    -- If the realms aren't equal then the range is always false
+    if playerRealm ~= unitRealm then
+        -- Returning extra for UnitInRange, could be breaking but it doesn't interfere with any of the supported addons
+        return false
+    else
+        return _VUHDO_isInRange(unit)
+    end
 end
 
 function mod:ReplaceGlobals()
     -- ElvUI
-    if LibStub and LibStub.libs["SpellRange-1.0"] then
-        _LibIsSpellInRange = LibStub.libs["SpellRange-1.0"].IsSpellInRange
-        LibStub.libs["SpellRange-1.0"].IsSpellInRange = LibIsSpellInRealmRange
+    if ElvUI then
+        _LibIsSpellInRange = LibStub("SpellRange-1.0").IsSpellInRange
+        LibStub("SpellRange-1.0").IsSpellInRange = LibIsSpellInRealmRange
     end
 
     -- Vuhdo
     if VUHDO_isInRange then
+        _VUHDO_isInRange = VUHDO_isInRange
         VUHDO_isInRange = VUHDO_isInRealmRange
     end
 
@@ -100,8 +185,8 @@ end
 
 function mod:RestoreGlobals()
 
-    if LibStub and LibStub.libs["SpellRange-1.0"] then
-        LibStub.libs["SpellRange-1.0"].IsSpellInRange = _LibIsSpellInRange
+    if ElvUI then
+        LibStub("SpellRange-1.0").IsSpellInRange = _LibIsSpellInRange
     end
 
     if VUHDO_isInRange then
@@ -199,12 +284,18 @@ local frame = CreateFrame("Frame")
 frame:RegisterEvent("ENCOUNTER_START")
 frame:RegisterEvent("ENCOUNTER_END")
 
+local enabled = false;
 local function Enable()
-	mod:ReplaceGlobals()
+	if not enabled then 
+        mod:ReplaceGlobals()
+        enabled = true
+    end
 end
 
 local function Disable()
-    mod:RestoreGlobals()
+    if enabled then
+        mod:RestoreGlobals()
+    end
 end
 
 frame:SetScript("OnEvent", function(_, event, encounterID)
