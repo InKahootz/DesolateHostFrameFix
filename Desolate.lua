@@ -71,18 +71,16 @@ local function GridUnitInRealmRange(unit)
     end
 end
 
--- Replace IsSpellInRange(index, "bookType", "unit")
+-- Replace IsSpellInRange(index, "bookType", "unit"), IsSpellInRange("name", "unit")
 local function IsSpellInRealmRange(index, bookType, unit)
-    --DelegateRangeCheck(_IsSpellInRange, index, bookType, unit)
-        -- Make sure we are actually getting a unit to check against
-
+    -- Make sure we are actually getting a unit to check against
     if not (UnitIsPlayer(bookType) or UnitIsPlayer(unit)) then
         -- Not our problem
         return _IsSpellInRange(index, bookType, unit)
     end
 
     local playerRealm = UnitDebuff("player", SPIRIT_REALM)
-    local unitRealm = UnitDebuff(bookType, SPIRIT_REALM) or UnitDebuff(unit, SPIRIT_REALM)
+    local unitRealm = UnitDebuff(bookType, SPIRIT_REALM) or UnitDebuff(unit or "", SPIRIT_REALM)
 
     -- If the realms aren't equal then the range is always false
     if playerRealm ~= unitRealm then
@@ -115,9 +113,7 @@ end
 
 -- Replace UnitInRange(unit)
 local function UnitInRealmRange(unit)
-    --DelegateRangeCheck(_UnitInRange, unit)
-            -- Make sure we are actually getting a unit to check against
-
+    -- Make sure we are actually getting a unit to check against
     if not UnitIsPlayer(unit) then
         -- Not our problem
         return _UnitInRange(unit)
@@ -137,9 +133,7 @@ end
 
 -- VUHDO override just to use our custom global functions
 local function VUHDO_isInRealmRange(unit)
-    --DelegateRangeCheck(_VUHDO_isInRange, unit)
     -- Make sure we are actually getting a unit to check against
-
     if not UnitIsPlayer(unit) then
         -- Not our problem
         return _VUHDO_isInRange(unit)
@@ -280,7 +274,6 @@ end
 --@end-debug@
 
 local frame = CreateFrame("Frame")
-
 frame:RegisterEvent("ENCOUNTER_START")
 frame:RegisterEvent("ENCOUNTER_END")
 
